@@ -1,0 +1,19 @@
+{
+  "name": "providence",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git-internal.driveworks.co.uk/DanielFruttauro/providence"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "fs-extra": "^8.0.1"
+  }
+}

@@ -37,4 +37,4 @@ const pushSubscriptionsDataStore = new dataStore({ filename: `${STORAGE_DIR}/pus
     });
 
     server.listen(PORT_NO);
-})();
+})(); 

@@ -1,0 +1,32 @@
+{
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "lib": [
+            "es2017",
+            "dom"
+        ],
+        "outDir": "dist",
+        "moduleResolution": "node",
+        "module": "commonjs",
+        "target": "ES2017",
+        "skipDefaultLibCheck": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "sourceMap": true,
+        "strict": true,
+        "alwaysStrict": false,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "preserveConstEnums": true,
+        "pretty": true,
+        "listFiles": false
+    }
+}

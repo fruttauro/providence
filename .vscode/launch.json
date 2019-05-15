@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Run my main file",
             "args": [
-                "${workspaceFolder}/src/server/main.js"
+                "${workspaceFolder}/dist/server/main.js"
             ]
         }
     ]

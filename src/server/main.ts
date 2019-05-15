@@ -5,6 +5,7 @@ import * as fs from "fs-extra";
 import * as https from "https";
 import * as dataStore from "nedb";
 import * as path from "path";
+import * as webPush from "web-push";
 import * as webSocket from "ws";
 
 const PORT_NO = 1337;
@@ -28,6 +29,16 @@ pushSubscriptionsDataStore.ensureIndex({ fieldName: "endpoint", unique: true }, 
 (async () => {
     const SSL_KEY = await fs.readFile(`${SECRETS_DIR}/localhost.key`);
     const SSL_CERT = await fs.readFile(`${SECRETS_DIR}/localhost.cer`);
+
+    const VAPID_KEYS = {
+        publicKey: "BPfbkLtT8zRVfuLNsHXbCh89238qFJjZewmHsPCTDLhbRTFavy1naX00H74sc85yOK72WeTTHNxa78ZLYfHuEdM",
+        privateKey: await fs.readFile(`${SECRETS_DIR}/pushPrivateKey`, "utf8")
+    };
+
+    webPush.setVapidDetails(
+        "mailto:danielfruttauro@driveworks.co.uk",
+        VAPID_KEYS.publicKey,
+        VAPID_KEYS.privateKey);
 
     const server = https.createServer({ key: SSL_KEY, cert: SSL_CERT }, app);
     const wss = new webSocket.Server({ server });
@@ -68,6 +79,24 @@ pushSubscriptionsDataStore.ensureIndex({ fieldName: "endpoint", unique: true }, 
             res.setHeader("Content-Type", "application/json");
             res.send(JSON.stringify({ data: { success: true, message: "The subscription was added to our database." } }));
         });
+    });
+
+    app.post("/api/triggerTestPost", cors(), async (_req, res) => {
+        pushSubscriptionsDataStore.find({}, async (error: Error, subscriptions: any) => {
+            if (error) {
+                return;
+            }
+
+            for (const subscription of subscriptions) {
+                console.log(subscription);
+                await webPush.sendNotification(subscription, "Hello you!");
+            }
+
+        });
+
+        res.status(200);
+        res.setHeader("Content-Type", "application/json");
+        res.send(JSON.stringify({ data: { success: true, message: "Push notifications were sent to all subscriptions." } }));
     });
 
     wss.on("connection", (ws) => {

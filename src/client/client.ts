@@ -100,3 +100,7 @@ async function postPushSubscription(subscription: PushSubscription) {
 
     return response.json();
 }
+
+async function triggerTest() {
+    return fetch(`${API_BASE_URL}/triggerTestPost`, { method: "POST" });
+}

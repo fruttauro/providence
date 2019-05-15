@@ -19,6 +19,7 @@
         "skipLibCheck": true,
         "declaration": true,
         "sourceMap": true,
+        "mapRoot": "/src/client",
         "strict": true,
         "alwaysStrict": false,
         "forceConsistentCasingInFileNames": true,

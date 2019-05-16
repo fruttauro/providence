@@ -3,14 +3,14 @@ import * as cors from "cors";
 import * as express from "express";
 import * as fs from "fs-extra";
 import * as https from "https";
-import * as dataStore from "nedb";
 import * as path from "path";
 import * as webPush from "web-push";
 import * as webSocket from "ws";
+import { PersistentStorageManager } from "./storageManager";
+import { createResponse } from "./serverHelpers";
 
 const PORT_NO = 1337;
 const SECRETS_DIR = "./settings/secrets";
-const STORAGE_DIR = "./storage";
 const STATIC_CONTENT_DIR = path.join(__dirname, "../../staticContent");
 const DIST_DIR = path.join(__dirname, "../");
 
@@ -23,8 +23,8 @@ app.use(bodyParser.json());
 app.use(express.static(STATIC_CONTENT_DIR));
 app.use(express.static(DIST_DIR));
 
-const pushSubscriptionsDataStore = new dataStore({ filename: `${STORAGE_DIR}/pushSubscriptions.db`, autoload: true });
-pushSubscriptionsDataStore.ensureIndex({ fieldName: "endpoint", unique: true }, (error) => console.log(error));
+const storageManager = new PersistentStorageManager();
+const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore();
 
 (async () => {
     const SSL_KEY = await fs.readFile(`${SECRETS_DIR}/localhost.key`);
@@ -51,39 +51,34 @@ pushSubscriptionsDataStore.ensureIndex({ fieldName: "endpoint", unique: true }, 
         const pushSubscriptionData = <PushSubscription>req.body;
 
         if (!pushSubscriptionData || !pushSubscriptionData.endpoint) {
-            res.status(400);
-            res.setHeader("Content-Type", "application/json");
-            res.send(JSON.stringify({ data: { success: false, message: "The push subscription request was invalid. " } }));
+            createResponse(res, 400, "The push subscription request was invalid.", false);
         }
 
         pushSubscriptionsDataStore.insert(pushSubscriptionData, (error, _document) => {
+
             if (error) {
-
-                // Thanks sucky typings
                 if ((<any>error).errorType !== "uniqueViolated") {
-
-                    res.status(500);
-                    res.setHeader("Content-Type", "application/json");
-                    res.send(JSON.stringify({
-                        data: {
-                            success: false,
-                            message: "The subscription was received but we were unable to save it to our database."
-                        }
-                    }));
+                    createResponse(res, 500, "The subscription was received but we were unable to save it to our database.", false);
 
                     return;
                 }
             }
 
-            res.status(200);
-            res.setHeader("Content-Type", "application/json");
-            res.send(JSON.stringify({ data: { success: true, message: "The subscription was added to our database." } }));
+            createResponse(res, 200, "The subscription was added to our database.");
         });
     });
 
+    app.post("/gitWebhook", (req, _res) => {
+        console.log(req.body);
+    });
+
     app.post("/api/triggerTestPost", cors(), async (_req, res) => {
-        pushSubscriptionsDataStore.find({}, async (error: Error, subscriptions: any) => {
+        pushSubscriptionsDataStore.find({}, async (error: Error, subscriptions: webPush.PushSubscription[]) => {
+
             if (error) {
+                console.log(error);
+                createResponse(res, 500, error.message, false);
+
                 return;
             }
 
@@ -96,14 +91,13 @@ pushSubscriptionsDataStore.ensureIndex({ fieldName: "endpoint", unique: true }, 
                     if (error.statusCode === 410) {
                         pushSubscriptionsDataStore.remove(subscription);
                     }
+
                     console.log(error);
                 }
             }
         });
 
-        res.status(200);
-        res.setHeader("Content-Type", "application/json");
-        res.send(JSON.stringify({ data: { success: true, message: "Push notifications were sent to all subscriptions." } }));
+        createResponse(res, 200, "Push notifications were sent to all subscriptions.");
     });
 
     wss.on("connection", (ws) => {

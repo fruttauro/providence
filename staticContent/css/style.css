@@ -1,0 +1,11 @@
+html {
+    background-image: url("https://images-na.ssl-images-amazon.com/images/I/51CnHZpSOaL._SY355_.jpg");
+    background-size: 20%;
+}
+
+body {
+    padding: 1em;
+    background-color: rgba(255, 105, 180, .9);
+    color: white;
+    font-weight: bold;
+}

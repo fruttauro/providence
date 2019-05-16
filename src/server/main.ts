@@ -1,16 +1,15 @@
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
 import * as express from "express";
-import * as fs from "fs-extra";
 import * as https from "https";
 import * as path from "path";
 import * as webPush from "web-push";
 import * as webSocket from "ws";
-import { PersistentStorageManager } from "./storageManager";
 import { createResponse } from "./serverHelpers";
+import { SettingsManager } from "./settingsManager";
+import { PersistentStorageManager } from "./storageManager";
 
 const PORT_NO = 1337;
-const SECRETS_DIR = "./settings/secrets";
 const STATIC_CONTENT_DIR = path.join(__dirname, "../../staticContent");
 const DIST_DIR = path.join(__dirname, "../");
 
@@ -24,23 +23,23 @@ app.use(express.static(STATIC_CONTENT_DIR));
 app.use(express.static(DIST_DIR));
 
 const storageManager = new PersistentStorageManager();
+const settingsManager = new SettingsManager();
+
 const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore();
 
 (async () => {
-    const SSL_KEY = await fs.readFile(`${SECRETS_DIR}/localhost.key`);
-    const SSL_CERT = await fs.readFile(`${SECRETS_DIR}/localhost.cer`);
-
-    const VAPID_KEYS = {
-        publicKey: "BPfbkLtT8zRVfuLNsHXbCh89238qFJjZewmHsPCTDLhbRTFavy1naX00H74sc85yOK72WeTTHNxa78ZLYfHuEdM",
-        privateKey: await fs.readFile(`${SECRETS_DIR}/pushPrivateKey`, "utf8")
-    };
 
     webPush.setVapidDetails(
         "mailto:danielfruttauro@driveworks.co.uk",
-        VAPID_KEYS.publicKey,
-        VAPID_KEYS.privateKey);
+        settingsManager.getVapidPublicKey(),
+        await settingsManager.getVapidPrivateKey());
 
-    const server = https.createServer({ key: SSL_KEY, cert: SSL_CERT }, app);
+    const server = https.createServer({
+        key: await settingsManager.getSSLKey(),
+        cert: await settingsManager.getSSLCert()
+    },
+        app);
+
     const wss = new webSocket.Server({ server });
 
     app.get("/", (_req, res) => {

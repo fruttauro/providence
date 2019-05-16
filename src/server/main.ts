@@ -88,10 +88,17 @@ pushSubscriptionsDataStore.ensureIndex({ fieldName: "endpoint", unique: true }, 
             }
 
             for (const subscription of subscriptions) {
-                console.log(subscription);
-                await webPush.sendNotification(subscription, "Hello you!");
-            }
+                try {
+                    await webPush.sendNotification(subscription, "Hey, you!");
+                } catch (error) {
 
+                    // Subscription is no longer valid
+                    if (error.statusCode === 410) {
+                        pushSubscriptionsDataStore.remove(subscription);
+                    }
+                    console.log(error);
+                }
+            }
         });
 
         res.status(200);

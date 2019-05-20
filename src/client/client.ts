@@ -22,7 +22,7 @@ socket.onopen = async () => {
 };
 
 socket.onclose = () => console.log("Web sockets go bye bye.");
-socket.onmessage = (message) => console.log(message);
+socket.onmessage = (message) => console.log(JSON.parse(message.data));
 
 function sendSocketStringMessage(message: string) {
     if (socket.readyState !== socket.OPEN) {

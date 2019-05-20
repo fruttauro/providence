@@ -107,10 +107,10 @@ const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore()
     wss.on("connection", (ws) => {
 
         ws.on("message", (message) => {
-            ws.send(`What did you just say to me?! "${message}" is offensive round these parts.`);
+            ws.send(JSON.stringify(`What did you just say to me?! "${message}" is offensive round these parts.`));
         });
 
-        ws.send("Hello, web sockets rock!");
+        ws.send(JSON.stringify("Hello, web sockets rock!"));
     });
 
     server.listen(PORT_NO);

@@ -67,41 +67,33 @@ const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore()
         });
     });
 
-    app.post("/gitWebhook", (req, _res) => {
+    app.post("/gitWebhook", async (req, res) => {
+
+        // TODO: How will we populate the client historically?
+        // Will we cache historical data server side when we get it here?
+        // Just cache client side?
+        // Use the GitHub API to get some previous data on client load?
 
         for (const client of wss.clients) {
             if (client.readyState === client.OPEN) {
                 client.send(JSON.stringify(req.body));
             }
         }
+
+        if (await pushToAllSubscriptions(req.body.head_commit.message)) {
+            sendResponse(res, 200, "Push notifications were sent to all subscriptions.");
+        } else {
+            sendResponse(res, 500, "Summut went wrong.", false);
+        }
     });
 
     app.post("/api/triggerTestPost", cors(), async (_req, res) => {
-        pushSubscriptionsDataStore.find({}, async (error: Error, subscriptions: webPush.PushSubscription[]) => {
 
-            if (error) {
-                console.log(error);
-                sendResponse(res, 500, error.message, false);
-
-                return;
-            }
-
-            for (const subscription of subscriptions) {
-                try {
-                    await webPush.sendNotification(subscription, "Hey, you!");
-                } catch (error) {
-
-                    // Subscription is no longer valid
-                    if (error.statusCode === 410) {
-                        pushSubscriptionsDataStore.remove(subscription);
-                    }
-
-                    console.log(error);
-                }
-            }
-        });
-
-        sendResponse(res, 200, "Push notifications were sent to all subscriptions.");
+        if (!await pushToAllSubscriptions("Hey, you!")) {
+            sendResponse(res, 500, "Summut went wrong.", false);
+        } else {
+            sendResponse(res, 200, "Push notifications were sent to all subscriptions.");
+        }
     });
 
     wss.on("connection", (ws) => {
@@ -116,3 +108,32 @@ const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore()
     server.listen(PORT_NO);
     console.log(`Big Brother Is Watching at Port ${PORT_NO}`);
 })();
+
+async function pushToAllSubscriptions(data: any) {
+    pushSubscriptionsDataStore.find({}, async (error: Error, subscriptions: webPush.PushSubscription[]) => {
+
+        if (error) {
+            console.log(error);
+
+            return false;
+        }
+
+        for (const subscription of subscriptions) {
+            try {
+                await webPush.sendNotification(subscription, JSON.stringify(data));
+            } catch (error) {
+
+                // Subscription is no longer valid
+                if (error.statusCode === 410) {
+                    pushSubscriptionsDataStore.remove(subscription);
+                }
+
+                console.log(error);
+            }
+        }
+
+        return true;
+    });
+
+    return true;
+}

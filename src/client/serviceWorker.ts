@@ -2,10 +2,10 @@ const ICON_URL = "https://images-na.ssl-images-amazon.com/images/I/51CnHZpSOaL._
 const NOTIFICATION_TITLE = "Providence";
 
 self.addEventListener("push", (event) => {
-
+    console.log(event);
     self.registration.showNotification(NOTIFICATION_TITLE, {
         icon: ICON_URL,
-        body: (<PushEvent>event).data.text(),
+        body: (<PushEvent>event).data.json(),
         actions: [
             {
                 action: "yes-action",

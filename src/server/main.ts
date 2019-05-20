@@ -5,7 +5,7 @@ import * as https from "https";
 import * as path from "path";
 import * as webPush from "web-push";
 import * as webSocket from "ws";
-import { createResponse } from "./serverHelpers";
+import { sendResponse } from "./serverHelpers";
 import { SettingsManager } from "./settingsManager";
 import { PersistentStorageManager } from "./storageManager";
 
@@ -50,25 +50,30 @@ const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore()
         const pushSubscriptionData = <PushSubscription>req.body;
 
         if (!pushSubscriptionData || !pushSubscriptionData.endpoint) {
-            createResponse(res, 400, "The push subscription request was invalid.", false);
+            sendResponse(res, 400, "The push subscription request was invalid.", false);
         }
 
         pushSubscriptionsDataStore.insert(pushSubscriptionData, (error, _document) => {
 
             if (error) {
                 if ((<any>error).errorType !== "uniqueViolated") {
-                    createResponse(res, 500, "The subscription was received but we were unable to save it to our database.", false);
+                    sendResponse(res, 500, "The subscription was received but we were unable to save it to our database.", false);
 
                     return;
                 }
             }
 
-            createResponse(res, 200, "The subscription was added to our database.");
+            sendResponse(res, 200, "The subscription was added to our database.");
         });
     });
 
     app.post("/gitWebhook", (req, _res) => {
-        console.log(req.body);
+
+        for (const client of wss.clients) {
+            if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify(req.body));
+            }
+        }
     });
 
     app.post("/api/triggerTestPost", cors(), async (_req, res) => {
@@ -76,7 +81,7 @@ const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore()
 
             if (error) {
                 console.log(error);
-                createResponse(res, 500, error.message, false);
+                sendResponse(res, 500, error.message, false);
 
                 return;
             }
@@ -96,7 +101,7 @@ const pushSubscriptionsDataStore = storageManager.getPushSubscriptionDataStore()
             }
         });
 
-        createResponse(res, 200, "Push notifications were sent to all subscriptions.");
+        sendResponse(res, 200, "Push notifications were sent to all subscriptions.");
     });
 
     wss.on("connection", (ws) => {

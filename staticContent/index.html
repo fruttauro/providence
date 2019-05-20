@@ -7,19 +7,33 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Providence | Big Brother Is Watching</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 </head>
 
 <body>
-    <header>
-        <h1>Providence</h1>
-        <p>
-            Big Brother Is Watching
-        </p>
-    </header>
-    <article>
-        <button onclick="triggerTest()">Give em a spook kid</button>
-    </article>
+    <div id="app">
+        <header>
+            <h1>Providence</h1>
+            <p>{{strapline}}</p>
+        </header>
+        <div>
+            <button onclick="triggerTest()">Give em a spook kid</button>
+        </div>
+    </div>
+
     <script src="client/client.js" async defer></script>
+
+    <script>
+
+        new Vue({
+            el: "#app",
+            data: {
+                strapline: "Big Brother Is Watching"
+            }
+        });
+
+    </script>
 </body>
 
 </html>
